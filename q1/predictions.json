@@ -1,0 +1,32 @@
+[
+    {
+        "score": 0.21039395034313202,
+        "token": 939,
+        "token_str": " i",
+        "sequence": "how do i do ??"
+    },
+    {
+        "score": 0.15822923183441162,
+        "token": 47,
+        "token_str": " you",
+        "sequence": "how do you do ??"
+    },
+    {
+        "score": 0.08799806237220764,
+        "token": 38,
+        "token_str": " I",
+        "sequence": "how do I do ??"
+    },
+    {
+        "score": 0.07736410945653915,
+        "token": 13531,
+        "token_str": " ya",
+        "sequence": "how do ya do ??"
+    },
+    {
+        "score": 0.07422783970832825,
+        "token": 52,
+        "token_str": " we",
+        "sequence": "how do we do ??"
+    }
+]
