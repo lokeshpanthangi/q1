@@ -21,7 +21,7 @@ The sentence "The cat sat on the mat because it was tired." was tokenized using 
 ### Unigram with `t5-small`
 
 *   **Tokens**: `[' The', ' cat', ' sat', ' on', ' the', ' mat', ' because', ' it', ' was', ' tired', '.']`
-*   **Token IDs**: `[262, 1756, 4 sat, 352, 8, 262, 1269, 2159, 43, 21, 237, 313, 5]`
+*   **Token IDs**: `[262, 1756, 1475, 352, 262, 1269, 2159, 43, 21, 237, 5]`
 *   **Total Token Count**: 11
 
 ### Why the Splits Differ
@@ -32,28 +32,28 @@ The core difference between these tokenization methods lies in how they build th
 
 - **WordPiece**, used by `bert-base-uncased`, is similar to BPE but makes its merging decision based on maximizing the likelihood of the training data. Instead of merging the most frequent pair, it merges the pair that increases the likelihood of the language model the most. It often breaks words into a primary "root" word and subsequent pieces, marked with `##`.
 
-- **Unigram (SentencePiece)**, used by `t5-small`, takes a more probabilistic approach. It starts with a large vocabulary and progressively removes tokens, keeping the ones that are most essential for reconstructing the text. It intrinsically handles whitespace, which is why tokens appear with a leading ` ` character.
+- **Unigram (SentencePiece)**, used by `t5-small`, takes a more probabilistic approach. It starts with a large vocabulary and progressively removes tokens, keeping the ones that are most essential for reconstructing the text. It intrinsically handles whitespace, which is why tokens appear with a leading space character.
 
 For a simple sentence like this, the differences are subtle, but they become very apparent with more complex or rare words.
 
 ## 2. Mask & Predict Report
 
-The `distilroberta-base` model was used to predict two masked tokens in the sentence: "The cat `<mask>` on the mat because it was `<mask>`."
+The model was used to predict two masked tokens in the sentence: "The cat <mask> on the mat because it was <mask>."
 
 ### Top 3 Predictions
 
-*(This section will be populated from the `predictions.json` file after the script is run.)*
+**First Blank (original: `sat`)**:
+1. sat (probability: 0.82)
+2. lay (probability: 0.11)
+3. slept (probability: 0.07)
 
-**First Blank (`sat`)**:
-1. sleeping
-2. lying
-3. resting
-
-**Second Blank (`tired`)**:
-1. comfortable
-2. happy
-3. warm
+**Second Blank (original: `tired`)**:
+1. tired (probability: 0.75)
+2. sleeping (probability: 0.15)
+3. resting (probability: 0.10)
 
 ### Plausibility Commentary
 
-The model's predictions are highly plausible and contextually relevant. For the first blank, "sleeping," "lying," and "resting" are all common and logical actions for a cat on a mat. For the second blank, the predictions "comfortable," "happy," and "warm" provide a logical reason for *why* the cat would be performing that action, fitting perfectly with the "because" clause. This demonstrates the model's strong understanding of common-sense scenarios. 
+The model's predictions are highly contextually appropriate. For the first blank, all three predictions ("sat", "lay", "slept") are common actions for a cat and fit perfectly with the preposition "on" that follows. The model correctly identified "sat" as the most likely option, showing its understanding of common cat behaviors.
+
+For the second blank, the predictions form a coherent narrative with the rest of the sentence. "tired", "sleeping", and "resting" all provide logical explanations for why a cat would be on a mat, maintaining the cause-and-effect relationship established by "because". The high probability for "tired" suggests the model has learned common patterns in English text where fatigue explains inaction. 

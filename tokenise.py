@@ -2,7 +2,7 @@ import os
 import json
 import requests
 from dotenv import load_dotenv
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, pipeline
 
 # Load environment variables from a .env file
 load_dotenv()
@@ -27,112 +27,142 @@ def analyse_tokenization(name, tokenizer_path, sentence):
     print(f"Token IDs: {token_ids}")
     print(f"Total Token Count: {len(tokens)}")
     print("-" * 50 + "\n")
+    
+    return {
+        "tokens": tokens,
+        "token_ids": token_ids,
+        "count": len(tokens)
+    }
 
 # --- Part 2: Mask & Predict ---
 
-def query_fill_mask_api(masked_sentence, model_id="distilbert/distilroberta-base"):
+def predict_masked_tokens(sentence):
     """
-    Queries the Hugging Face Inference API to predict masked tokens in a sentence.
-    Prints the completed sentence and saves the raw JSON output.
+    Uses the model to predict masked tokens in the sentence.
+    Returns predictions and saves them to predictions.json.
     """
-    api_url = f"https://api-inference.huggingface.co/models/{model_id}"
-    headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
-    
-    print(f"--- Querying Fill-Mask API for: {model_id} ---")
-    print(f"Input Sentence: {masked_sentence}")
-
-    payload = {"inputs": masked_sentence}
-    
     try:
-        response = requests.post(api_url, headers=headers, json=payload)
-        response.raise_for_status()
-        predictions = response.json()
+        if '<mask>' not in sentence:
+            print("Error: The sentence must contain at least one <mask> token.")
+            return None
 
-        output_path = os.path.join("q1", "predictions.json")
-        with open(output_path, "w") as f:
-            json.dump(predictions, f, indent=4)
-            
-        print(f"Successfully received predictions and saved to {output_path}")
-
-        # --- Fill in the blanks and display the result ---
-        completed_sentence = masked_sentence
-        if isinstance(predictions, list) and predictions:
-            # Handle multiple masks, where the API returns a list of lists
-            if isinstance(predictions[0], list):
-                for blank_predictions in predictions:
-                    if blank_predictions:
-                        top_prediction = blank_predictions[0]['token_str']
-                        completed_sentence = completed_sentence.replace("<mask>", top_prediction, 1)
-            # Handle a single mask, where the API returns a list of dicts
+        # Initialize the pipeline
+        fill_mask = pipeline(
+            "fill-mask",
+            model="distilroberta-base",  # You can replace this with your preferred model
+            top_k=3
+        )
+        
+        # Get predictions
+        predictions = fill_mask(sentence)
+        
+        # Format predictions for JSON storage
+        formatted_predictions = []
+        for pred_set in predictions:
+            if isinstance(pred_set, list):
+                # Multiple masks case
+                mask_predictions = []
+                for p in pred_set:
+                    mask_predictions.append({
+                        "token": p["token"],
+                        "token_str": p["token_str"].strip(),
+                        "score": float(p["score"]),
+                        "sequence": p["sequence"]
+                    })
+                formatted_predictions.append(mask_predictions)
             else:
-                top_prediction = predictions[0]['token_str']
-                completed_sentence = completed_sentence.replace("<mask>", top_prediction, 1)
-
-            print("\n--- Prediction Result ---")
-            print(f"Completed Sentence: {completed_sentence}\n")
+                # Single mask case
+                formatted_predictions.append({
+                    "token": pred_set["token"],
+                    "token_str": pred_set["token_str"].strip(),
+                    "score": float(pred_set["score"]),
+                    "sequence": pred_set["sequence"]
+                })
         
-        return predictions
-
-    except requests.exceptions.RequestException as e:
-        print(f"API Request failed: {e}")
-        if "401" in str(e):
-            print("Authentication error (401): Please ensure your HF_API_TOKEN is correct.")
-        return None
+        # Save predictions to JSON
+        with open("predictions.json", "w") as f:
+            json.dump(formatted_predictions, f, indent=4)
+        
+        return formatted_predictions
+        
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        print(f"An error occurred during prediction: {e}")
         return None
 
-def interactive_fill_mask():
-    """Handles the user interaction for the fill-mask feature."""
-    while True:
-        print("\nEnter a sentence with one or more <mask> tokens to get predictions.")
-        print("(Type 'back' to return to the main menu)")
-        user_input = input("> ")
-
-        if user_input.lower() == 'back':
-            break
-        
-        if '<mask>' not in user_input:
-            print("Error: Your sentence must include at least one '<mask>' token.")
-            continue
-
-        query_fill_mask_api(user_input)
+def display_predictions(predictions):
+    """Display the predictions in a formatted way."""
+    if predictions:
+        print("\nPredictions saved to predictions.json")
+        print("\nTop 3 predictions for each mask:")
+        for i, pred_set in enumerate(predictions, 1):
+            print(f"\nMask {i}:")
+            if isinstance(pred_set, list):
+                for j, pred in enumerate(pred_set[:3], 1):
+                    print(f"{j}. {pred['token_str']} (probability: {pred['score']:.2f})")
+            else:
+                print(f"1. {pred_set['token_str']} (probability: {pred_set['score']:.2f})")
 
 def main():
     """Main function to run the tokenization and prediction tasks."""
     
     while True:
-        print("--- Project Menu ---")
-        print("1: Run Tokenization Analysis")
-        print("2: Interactive Fill-in-the-Blank")
+        print("\n=== Project Menu ===")
+        print("1: Run Analysis with Example Sentence")
+        print("2: Run Analysis with Custom Sentence")
         print("3: Exit")
-        choice = input("Please enter your choice (1, 2, or 3): ")
+        choice = input("\nPlease enter your choice (1, 2, or 3): ")
 
         if choice == '1':
+            # Part 1: Tokenization Analysis with example
             sentence_to_tokenize = "The cat sat on the mat because it was tired."
+            print("\n--- Starting Tokenization Analysis ---")
             tokenizers_to_test = {
                 "BPE (Byte-Pair Encoding)": "gpt2",
                 "WordPiece": "bert-base-uncased",
                 "Unigram": "t5-small"
             }
             
-            print("\n--- Starting Tokenization Analysis ---")
+            tokenization_results = {}
             for name, path in tokenizers_to_test.items():
-                analyse_tokenization(name, path, sentence_to_tokenize)
-        
+                tokenization_results[name] = analyse_tokenization(name, path, sentence_to_tokenize)
+            
+            # Part 2: Mask & Predict with example
+            print("\n--- Starting Mask Prediction ---")
+            masked_sentence = "The cat <mask> on the mat because it was <mask>."
+            predictions = predict_masked_tokens(masked_sentence)
+            display_predictions(predictions)
+
         elif choice == '2':
-            if not HF_API_TOKEN:
-                print("\nError: HF_API_TOKEN not found.")
-                print("Please create a .env file with your Hugging Face API token to use this feature.")
-            else:
-                interactive_fill_mask()
-        
+            # Get custom sentence for tokenization
+            print("\nEnter a sentence for tokenization analysis:")
+            custom_sentence = input("> ")
+            
+            print("\n--- Starting Tokenization Analysis ---")
+            tokenizers_to_test = {
+                "BPE (Byte-Pair Encoding)": "gpt2",
+                "WordPiece": "bert-base-uncased",
+                "Unigram": "t5-small"
+            }
+            
+            tokenization_results = {}
+            for name, path in tokenizers_to_test.items():
+                tokenization_results[name] = analyse_tokenization(name, path, custom_sentence)
+            
+            # Get custom masked sentence
+            print("\nNow enter the same sentence with <mask> tokens where you want predictions:")
+            print("Example: 'The <mask> ran to the <mask>.'")
+            masked_sentence = input("> ")
+            
+            print("\n--- Starting Mask Prediction ---")
+            predictions = predict_masked_tokens(masked_sentence)
+            display_predictions(predictions)
+
         elif choice == '3':
-            print("Exiting program. Goodbye!")
+            print("\nExiting program. Goodbye!")
             break
-        
+            
         else:
-            print("Invalid choice. Please enter 1, 2, or 3.")
+            print("\nInvalid choice. Please enter 1, 2, or 3.")
 
 if __name__ == "__main__":
     main() 

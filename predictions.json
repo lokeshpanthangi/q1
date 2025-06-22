@@ -1,32 +1,42 @@
 [
-    {
-        "score": 0.21039395034313202,
-        "token": 939,
-        "token_str": " i",
-        "sequence": "how do i do ??"
-    },
-    {
-        "score": 0.15822923183441162,
-        "token": 47,
-        "token_str": " you",
-        "sequence": "how do you do ??"
-    },
-    {
-        "score": 0.08799806237220764,
-        "token": 38,
-        "token_str": " I",
-        "sequence": "how do I do ??"
-    },
-    {
-        "score": 0.07736410945653915,
-        "token": 13531,
-        "token_str": " ya",
-        "sequence": "how do ya do ??"
-    },
-    {
-        "score": 0.07422783970832825,
-        "token": 52,
-        "token_str": " we",
-        "sequence": "how do we do ??"
-    }
+    [
+        {
+            "token": 1064,
+            "token_str": "fell",
+            "score": 0.17098532617092133,
+            "sequence": "<s>The cat fell on the mat because it was<mask>.</s>"
+        },
+        {
+            "token": 4262,
+            "token_str": "jumped",
+            "score": 0.14323656260967255,
+            "sequence": "<s>The cat jumped on the mat because it was<mask>.</s>"
+        },
+        {
+            "token": 4711,
+            "token_str": "stayed",
+            "score": 0.0724213570356369,
+            "sequence": "<s>The cat stayed on the mat because it was<mask>.</s>"
+        }
+    ],
+    [
+        {
+            "token": 11130,
+            "token_str": "hungry",
+            "score": 0.09738728404045105,
+            "sequence": "<s>The cat<mask> on the mat because it was hungry.</s>"
+        },
+        {
+            "token": 7727,
+            "token_str": "wet",
+            "score": 0.028881946578621864,
+            "sequence": "<s>The cat<mask> on the mat because it was wet.</s>"
+        },
+        {
+            "token": 8265,
+            "token_str": "scared",
+            "score": 0.028279677033424377,
+            "sequence": "<s>The cat<mask> on the mat because it was scared.</s>"
+        }
+    ]
 ]
